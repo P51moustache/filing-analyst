@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
 
 
@@ -18,14 +18,18 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:3000"
     upload_dir: str = "./uploads"
     reports_dir: str = "./reports"
+    # SQLite file backing the analysis job store. State survives restarts and is pruned
+    # by age rather than kept in memory forever.
+    db_path: str = "./analyses.db"
+    # Analyses older than this (and their uploaded file + Excel report) are pruned on
+    # startup so the job store, upload dir, and reports dir do not grow without bound.
+    retention_hours: int = 168  # 7 days
+
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.cors_origins.split(",")]
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 settings = Settings()

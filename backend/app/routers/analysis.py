@@ -8,7 +8,6 @@ import aiofiles
 from app.config import settings
 from app.models.schemas import (
     UploadResponse,
-    AnalysisRequest,
     AnalysisStatusResponse,
     AnalysisStatus
 )

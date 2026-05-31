@@ -1,0 +1,7 @@
+# Lint rules: pyflakes (F) for real errors like unused imports and undefined
+# names, plus the pycodestyle error subset (E4/E7/E9). These catch bugs without
+# imposing cosmetic reformatting on the codebase.
+line-length = 100
+
+[lint]
+select = ["E4", "E7", "E9", "F"]

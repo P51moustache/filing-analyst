@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any, List
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -204,7 +204,7 @@ class AnalysisResult(BaseModel):
     ai_insights: str
     key_takeaways: List[str] = []
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     excel_report_path: Optional[str] = None
 
 

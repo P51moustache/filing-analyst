@@ -1,11 +1,11 @@
 from typing import Dict, Optional
-import uuid
 import asyncio
-from datetime import datetime
 
+from app.config import settings
 from app.services.document_parser import DocumentParser
 from app.services.ai_analyzer import AIAnalyzer
 from app.services.report_generator import ReportGenerator
+from app.services.job_store import JobStore
 from app.models.schemas import AnalysisStatus, AnalysisResult
 
 
@@ -16,39 +16,31 @@ class AnalysisOrchestrator:
         self.parser = DocumentParser()
         self.analyzer = AIAnalyzer()
         self.report_gen = ReportGenerator(reports_dir)
-        self.analyses: Dict[str, Dict] = {}  # In-memory storage (use DB in production)
+        # Durable, bounded job store (survives restarts; old jobs + files are pruned).
+        self.store = JobStore(settings.db_path)
+        self.store.prune_expired(settings.retention_hours)
 
     def create_analysis(self, file_path: str, filename: str, file_size: int) -> str:
         """
         Create a new analysis job
         Returns analysis_id
         """
-        analysis_id = str(uuid.uuid4())
-
-        self.analyses[analysis_id] = {
-            "status": AnalysisStatus.PENDING,
-            "progress": 0,
-            "file_path": file_path,
-            "filename": filename,
-            "file_size": file_size,
-            "created_at": datetime.utcnow(),
-            "message": "Analysis queued",
-            "result": None,
-            "error": None
-        }
-
-        return analysis_id
+        return self.store.create(file_path, filename, file_size)
 
     async def run_analysis(self, analysis_id: str, custom_prompt: Optional[str] = None):
         """
         Run the complete analysis workflow asynchronously
         """
         try:
+            job = self.store.get(analysis_id)
+            if job is None:
+                return
+
             # Update status
             self._update_status(analysis_id, AnalysisStatus.PROCESSING, 10, "Parsing document...")
 
             # Parse document
-            file_path = self.analyses[analysis_id]["file_path"]
+            file_path = job["file_path"]
             sections = await asyncio.to_thread(self.parser.parse, file_path)
             metadata = await asyncio.to_thread(self.parser.extract_metadata, sections)
 
@@ -105,7 +97,7 @@ class AnalysisOrchestrator:
                 AnalysisStatus.COMPLETED,
                 100,
                 "Analysis complete",
-                result.dict()
+                result.model_dump()
             )
 
         except Exception as e:
@@ -128,22 +120,12 @@ class AnalysisOrchestrator:
         error: Optional[str] = None
     ):
         """Update analysis status"""
-        if analysis_id in self.analyses:
-            self.analyses[analysis_id].update({
-                "status": status,
-                "progress": progress,
-                "message": message,
-                "result": result,
-                "error": error
-            })
+        self.store.update(analysis_id, status, progress, message, result, error)
 
     def get_status(self, analysis_id: str) -> Optional[Dict]:
         """Get analysis status"""
-        return self.analyses.get(analysis_id)
+        return self.store.get(analysis_id)
 
     def get_report_path(self, analysis_id: str) -> Optional[str]:
         """Get report file path"""
-        analysis = self.analyses.get(analysis_id)
-        if analysis and analysis.get("result"):
-            return analysis["result"].get("excel_report_path")
-        return None
+        return self.store.get_report_path(analysis_id)
