@@ -20,9 +20,15 @@ function App() {
   useEffect(() => {
     if (!analysisId) return;
 
+    // Tolerate transient poll failures (a dropped request, a brief hiccup) instead
+    // of giving up on the first error; only surface a failure after several in a row.
+    const MAX_CONSECUTIVE_ERRORS = 3;
+    let consecutiveErrors = 0;
+
     const pollInterval = setInterval(async () => {
       try {
         const statusResponse = await analysisApi.getStatus(analysisId);
+        consecutiveErrors = 0;
         setStatus(statusResponse);
 
         // Stop polling if completed or failed
@@ -33,9 +39,15 @@ function App() {
           clearInterval(pollInterval);
         }
       } catch (err: any) {
-        console.error('Error polling status:', err);
-        setError(err.message);
-        clearInterval(pollInterval);
+        consecutiveErrors += 1;
+        console.error(
+          `Error polling status (${consecutiveErrors}/${MAX_CONSECUTIVE_ERRORS}):`,
+          err
+        );
+        if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
+          setError(err.message);
+          clearInterval(pollInterval);
+        }
       }
     }, 2000); // Poll every 2 seconds
 

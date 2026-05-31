@@ -27,6 +27,9 @@ wheels/
 backend/.env
 backend/uploads/
 backend/reports/
+backend/*.db
+backend/*.db-wal
+backend/*.db-shm
 
 # Virtual environments
 .venv/

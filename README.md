@@ -1,5 +1,7 @@
 # Filing Analyst
 
+[![CI](https://github.com/p51moustache/filing-analyst/actions/workflows/ci.yml/badge.svg)](https://github.com/p51moustache/filing-analyst/actions/workflows/ci.yml)
+
 An AI tool that reads an SEC **10-K** filing and produces a structured swing-trading workup: ~45 financial metrics, sector-specific metrics, red flags, catalysts, and a deterministic **0-100 trade score** with a rating. FastAPI + the Anthropic Claude API on the backend, React + TypeScript on the front.
 
 It is built around an analyst framework: revenue bridges, FCF/NI quality, cash-conversion cycle, leverage, SBC dilution, and sector-specific keys for SaaS, semis, defense, banks, REITs, and more.
@@ -19,6 +21,10 @@ Deterministic trade score (Python)  -->  40% catalysts · 35% quality/cash · 25
         v
 Excel report (openpyxl)  +  JSON for the UI
 ```
+
+Analysis jobs are tracked in a SQLite store (`app/services/job_store.py`), so status
+and results survive a server restart and the upload/report directories don't grow without
+bound — jobs older than `RETENTION_HOURS` are pruned with their files on startup.
 
 ## The LLM engineering
 
@@ -81,6 +87,8 @@ Backend environment variables (`backend/.env`):
 | `MAX_INPUT_TOKENS` | `200000` | Filing token budget before transparent trimming |
 | `MAX_FILE_SIZE` | `20971520` | Max upload size in bytes (20 MB) |
 | `CORS_ORIGINS` | `http://localhost:3000` | Allowed origins |
+| `DB_PATH` | `./analyses.db` | SQLite file backing the job store |
+| `RETENTION_HOURS` | `168` | Age after which analyses and their files are pruned |
 
 ## Tests
 
@@ -90,7 +98,7 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-Tests cover the scoring math and the extraction-to-pipeline mapping with the Claude call mocked, so no API key or network is needed.
+Tests cover the scoring math, the extraction-to-pipeline mapping with the Claude call mocked, and the SQLite job store (durability + pruning) — so no API key or network is needed. The React app has a Jest/RTL test for the upload → poll → results flow. Everything runs in CI (`.github/workflows/ci.yml`): backend lint + tests, frontend typecheck + tests + build.
 
 ## API
 
