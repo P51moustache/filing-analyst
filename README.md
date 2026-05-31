@@ -50,8 +50,9 @@ The analyzer (`backend/app/services/ai_analyzer.py`):
 
 ## Tech stack
 
-**Backend:** Python · FastAPI · Anthropic SDK (structured outputs, prompt caching, token counting) · Pydantic v2 · pandas / openpyxl · PyPDF2 · BeautifulSoup4
+**Backend:** Python · FastAPI · Anthropic SDK (structured outputs, prompt caching, token counting) · Pydantic v2 · pandas / openpyxl · PyPDF2 · BeautifulSoup4 · SQLite job store
 **Frontend:** React · TypeScript · axios
+**Mobile:** React Native · Expo (SDK 56) · TypeScript
 
 ## Run it
 
@@ -74,6 +75,10 @@ npm start          # opens http://localhost:3000
 ```
 
 Then download a 10-K from [SEC EDGAR](https://www.sec.gov/edgar/searchedgar/companysearch) (the HTML or PDF of the filing) and upload it. Fetching from EDGAR is manual; the app analyzes whatever file you give it.
+
+**Mobile (Expo)**
+
+There's also a React Native client in [`mobile/`](mobile) that runs on your phone via [Expo Go](https://expo.dev/go) — same analysis, native UI. Run the backend with `--host 0.0.0.0`, then `cd mobile && npm install && npx expo start` and scan the QR code. On the same Wi-Fi it auto-detects the backend; see [mobile/README.md](mobile/README.md) for cellular/tunnel setup.
 
 ## Configuration
 
