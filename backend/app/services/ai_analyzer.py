@@ -1,6 +1,6 @@
 """AI-powered 10-K analysis using the Claude API.
 
-Engineering notes (the parts a reviewer cares about):
+Design notes:
   * Structured outputs - the model is forced to return a schema-valid object via
     `messages.parse(output_format=...)`, so there is no brittle regex JSON scraping.
   * Current, configurable model - defaults to the flagship, overridable per deploy.

@@ -2,7 +2,7 @@
 
 An AI tool that reads an SEC **10-K** filing and produces a structured swing-trading workup: ~45 financial metrics, sector-specific metrics, red flags, catalysts, and a deterministic **0-100 trade score** with a rating. FastAPI + the Anthropic Claude API on the backend, React + TypeScript on the front.
 
-It is built around a real analyst framework (revenue bridges, FCF/NI quality, cash-conversion cycle, leverage, SBC dilution, sector keys for SaaS / semis / defense / banks / REITs and more) rather than a generic "summarize this document" prompt.
+It is built around an analyst framework: revenue bridges, FCF/NI quality, cash-conversion cycle, leverage, SBC dilution, and sector-specific keys for SaaS, semis, defense, banks, REITs, and more.
 
 ## How it works
 
@@ -22,7 +22,7 @@ Excel report (openpyxl)  +  JSON for the UI
 
 ## The LLM engineering
 
-The interesting part is how the model is used. The analyzer (`backend/app/services/ai_analyzer.py`) is written to current Anthropic SDK best practices:
+The analyzer (`backend/app/services/ai_analyzer.py`):
 
 - **Structured outputs, not regex.** The model is forced to return a schema-valid object via `client.messages.parse(output_format=ExtractedAnalysis)`. The Pydantic schema *is* the contract; there is no fragile "find the JSON in the prose" scraping, and a refusal or schema miss is handled explicitly.
 - **Current, configurable model.** Defaults to the flagship (`claude-opus-4-8`) and is overridable per deploy via `ANTHROPIC_MODEL` to trade quality for cost (e.g. `claude-sonnet-4-6`, `claude-haiku-4-5`).
